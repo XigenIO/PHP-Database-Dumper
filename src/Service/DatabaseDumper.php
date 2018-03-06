@@ -48,6 +48,11 @@ class DatabaseDumper
     /**
      * @var string
      */
+    protected $openstackAuth;
+
+    /**
+     * @var string
+     */
     protected $openstackPassword;
 
     /**
@@ -86,7 +91,6 @@ class DatabaseDumper
         $this->mysqlDatabase = $mysqlConfig['database'];
         $this->mysqlUsername = $mysqlConfig['username'];
         $this->mysqlPassword = $mysqlConfig['password'];
-
 
         $this->openstackAuth = $openstackConfig['auth'];
         $this->openstackUsername = $openstackConfig['username'];

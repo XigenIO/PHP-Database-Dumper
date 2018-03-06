@@ -58,7 +58,7 @@ class ListCommand extends BaseCommand
             }
         }
 
-        $table = (new Table($output))
+        (new Table($output))
             ->setHeaders(array('Filename', 'Created', 'Size'))
             ->setRows($rows)
             ->render()
