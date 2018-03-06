@@ -9,6 +9,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class GarbageCollectionCommand extends BaseCommand
 {
+    /**
+     * {@inheritdoc}
+     */
     protected function configure()
     {
         $this->setName('app:garbage-collection')
@@ -16,13 +19,14 @@ class GarbageCollectionCommand extends BaseCommand
         ;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $removed = $this->databaseDumper->gc();
-        if (false !== $removed) {
-            foreach ($removed as $file) {
-                $output->writeln("Removed file <info>{$file}</info>");
-            }
+        $removed = $this->databaseDumper->garbageCollection();
+        foreach ($removed as $file) {
+            $output->writeln("Removed file <info>{$file}</info>");
         }
     }
 }

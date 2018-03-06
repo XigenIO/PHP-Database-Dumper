@@ -149,7 +149,11 @@ class DatabaseDumper
         $path = $this->getDumpDir() . $filename;
 
         try {
-            $dump = new IMysqldump\Mysqldump($this->getDsn(), $this->username, $this->password);
+            $dump = new IMysqldump\Mysqldump(
+                $this->getDsn(),
+                $this->mysqlUsername,
+                $this->mysqlPassword
+            );
             $dump->start($path);
         } catch (\Exception $e) {
             dump($e->getMessage());
@@ -161,7 +165,7 @@ class DatabaseDumper
 
     private function getDsn()
     {
-        return "mysql:host={$this->hostname};dbname={$this->database}";
+        return "mysql:host={$this->mysqlHostname};dbname={$this->mysqlDatabase}";
     }
 
     /**
@@ -192,7 +196,11 @@ class DatabaseDumper
         return $filesystem->listContents($path, true);
     }
 
-    public function gc()
+    /**
+     * Clear up temporary files
+     * @return array List of files that have been removed
+     */
+    public function garbageCollection()
     {
         $filesystem = $this->getLocalFilesystem();
 
@@ -200,10 +208,6 @@ class DatabaseDumper
         foreach ($filesystem->listContents() as $object) {
             $filesystem->delete($object['path']);
             $removed[] = $object['basename'];
-        }
-
-        if ($removed === []) {
-            return false;
         }
 
         return $removed;
