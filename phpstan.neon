@@ -1,0 +1,8 @@
+includes:
+    - vendor/lookyman/phpstan-symfony/extension.neon
+parameters:
+    ignoreErrors:
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::getProjectDir\(\)#'
+        - '#Parameter \#1 \$data of method [a-zA-Z0-9\\_]+::getContainer\(\)#'
+    symfony:
+        container_xml_path: %rootDir%/../../../var/cache/dev/srcDevDebugProjectContainer.xml
