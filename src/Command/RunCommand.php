@@ -18,6 +18,12 @@ class RunCommand extends BaseCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->databaseDumper->create();
+        dump($this->databaseDumper);
+        exit();
+
+        $output->writeln("Creating dump");
+        $path = $this->databaseDumper->create();
+        $output->writeln("Upload dump");
+        $this->databaseDumper->upload($path);
     }
 }

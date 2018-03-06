@@ -2,11 +2,20 @@
     "carbondate/carbon": {
         "version": "1.23.2"
     },
+    "guzzle/guzzle": {
+        "version": "v3.8.1"
+    },
     "ifsnop/mysqldump-php": {
         "version": "v2.3.1"
     },
     "league/flysystem": {
         "version": "1.0.43"
+    },
+    "league/flysystem-rackspace": {
+        "version": "1.0.5"
+    },
+    "mikemccabe/json-patch-php": {
+        "version": "0.1.0"
     },
     "pdepend/pdepend": {
         "version": "2.5.2"
@@ -25,6 +34,9 @@
     },
     "psr/simple-cache": {
         "version": "1.0.0"
+    },
+    "rackspace/php-opencloud": {
+        "version": "v1.16.0"
     },
     "squizlabs/php_codesniffer": {
         "version": "3.2.3"

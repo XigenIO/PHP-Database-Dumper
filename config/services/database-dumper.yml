@@ -1,0 +1,16 @@
+parameters:
+    # Required config for the mysql dump
+    dd_mysqlConfig:
+        hostname: '%env(DD_mysqlConfig_hostname)%'
+        database: '%env(DD_mysqlConfig_database)%'
+        username: '%env(DD_mysqlConfig_username)%'
+        password: '%env(DD_mysqlConfig_password)%'
+
+    # Required config to upload the dump
+    dd_openstackConfig:
+        auth: '%env(DD_openstackConfig_auth)%'
+        username: '%env(DD_openstackConfig_username)%'
+        password: '%env(DD_openstackConfig_password)%'
+        tenantId: '%env(DD_openstackConfig_tenantId)%'
+        location: '%env(DD_openstackConfig_location)%'
+        container: '%env(DD_openstackConfig_container)%'
