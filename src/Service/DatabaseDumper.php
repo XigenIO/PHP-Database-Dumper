@@ -11,7 +11,7 @@ use League\Flysystem\Adapter\Local;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Rackspace\RackspaceAdapter;
 
-use Symfony\Component\HttpKernel\KernelInterface\KernelInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 class DatabaseDumper
 {
@@ -173,6 +173,23 @@ class DatabaseDumper
         $filesystem = $this->getLocalFilesystem();
 
         return $filesystem->listContents();
+    }
+
+    /**
+     * List database dumps on the remote storage
+     * @param  string $month
+     * @param  string $year
+     * @return array
+     */
+    public function listRemote($month, $year = null)
+    {
+        if (null === $year) {
+            $year = date('Y');
+        }
+        $path = "{$year}/{$month}";
+        $filesystem = $this->getRemoteFilesystem();
+
+        return $filesystem->listContents($path, true);
     }
 
     public function gc()
