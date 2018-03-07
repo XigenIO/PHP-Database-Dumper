@@ -14,3 +14,9 @@ parameters:
         tenantId: '%env(DD_openstackConfig_tenantId)%'
         location: '%env(DD_openstackConfig_location)%'
         container: '%env(DD_openstackConfig_container)%'
+
+    # Optional notifications config
+    dd_notificationConfig:
+        slack_enabled: '%env(DD_notification_slack_enabled)%'
+        slack_url: '%env(DD_notification_slack_url)%'
+        slack_channel: '%env(DD_notification_slack_channel)%'

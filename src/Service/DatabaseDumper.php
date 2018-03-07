@@ -21,6 +21,11 @@ class DatabaseDumper
     protected $kernel;
 
     /**
+     * @var \App\Service\Notifier
+     */
+    protected $notifier;
+
+    /**
      * @var string
      */
     protected $mysqlHostname;
@@ -78,10 +83,12 @@ class DatabaseDumper
 
     public function __construct(
         KernelInterface $kernel,
+        Notifier $notifier,
         array $mysqlConfig,
         array $openstackConfig
     ) {
         $this->kernel = $kernel;
+        $this->notifier = $notifier;
         $this->setConfigs($mysqlConfig, $openstackConfig);
     }
 
@@ -151,6 +158,7 @@ class DatabaseDumper
     {
         $filename = time() . '.sql';
         $path = $this->getDumpDir() . $filename;
+        $dsn = "mysql:host={$this->mysqlHostname};dbname={$this->mysqlDatabase}";
 
         try {
             $dump = new IMysqldump\Mysqldump(
@@ -165,11 +173,6 @@ class DatabaseDumper
         }
 
         return $filename;
-    }
-
-    private function getDsn()
-    {
-        return "mysql:host={$this->mysqlHostname};dbname={$this->mysqlDatabase}";
     }
 
     /**

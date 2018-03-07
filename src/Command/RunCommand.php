@@ -24,7 +24,7 @@ class RunCommand extends BaseCommand
         $output->writeln("Upload dump");
         $this->databaseDumper->upload($path);
 
-        $output->writeln("Removing dump locally");
+        $output->writeln("Running GC");
         $this->databaseDumper->garbageCollection();
     }
 }
