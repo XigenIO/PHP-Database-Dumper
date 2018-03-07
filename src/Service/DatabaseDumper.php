@@ -162,7 +162,7 @@ class DatabaseDumper
 
         try {
             $dump = new IMysqldump\Mysqldump(
-                $this->getDsn(),
+                $dsn,
                 $this->mysqlUsername,
                 $this->mysqlPassword
             );
