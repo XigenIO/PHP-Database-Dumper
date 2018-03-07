@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use PDO;
+
 use Ifsnop\Mysqldump as IMysqldump;
 
 use OpenCloud\OpenStack;
@@ -11,10 +13,18 @@ use League\Flysystem\Adapter\Local;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Rackspace\RackspaceAdapter;
 
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 class DatabaseDumper
 {
+    /**
+     * The amount of bytes in 64MB
+     * @var integer
+     */
+    const BYTES_64 = 64000000;
+
     /**
      * @var \Symfony\Component\HttpKernel\KernelInterface
      */
@@ -154,15 +164,19 @@ class DatabaseDumper
         return true;
     }
 
+    private function getDsn()
+    {
+        return "mysql:host={$this->mysqlHostname};dbname={$this->mysqlDatabase}";
+    }
+
     public function create()
     {
         $filename = time() . '.sql';
         $path = $this->getDumpDir() . $filename;
-        $dsn = "mysql:host={$this->mysqlHostname};dbname={$this->mysqlDatabase}";
 
         try {
             $dump = new IMysqldump\Mysqldump(
-                $dsn,
+                $this->getDsn(),
                 $this->mysqlUsername,
                 $this->mysqlPassword
             );
@@ -173,6 +187,43 @@ class DatabaseDumper
         }
 
         return $filename;
+    }
+
+    /**
+     * Compress a database dump to
+     * @param  string $path
+     * @param  OutputInterface $output
+     * @return boolean
+     */
+    public function compress($path, OutputInterface $output = null)
+    {
+        $local = $this->getLocalFilesystem();
+        $fileSize = $local->getSize($path);
+        $fileStream = $local->readStream($path);
+        $compressedName = $path . '.gz';
+        $gzHandle = gzopen($compressedName, 'w9');
+
+        $progressBar = null;
+        if (null !== $output) {
+            $progressBar = new ProgressBar($output, ($fileSize / self::BYTES_64));
+            $progressBar->setFormat('[%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% (%remaining:-6s%) %memory:6s%');
+            $progressBar->start();
+        }
+
+        while ($buffer = fread($fileStream, self::BYTES_64)) {
+            if ($progressBar) {
+                $progressBar->advance();
+            }
+            gzwrite($gzHandle, $buffer);
+        }
+
+        gzclose($gzHandle);
+
+        if ($progressBar) {
+            $progressBar->finish();
+        }
+
+        return $compressedName;
     }
 
     /**

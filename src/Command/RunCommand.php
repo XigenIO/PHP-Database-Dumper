@@ -18,13 +18,17 @@ class RunCommand extends BaseCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $output->writeln("Creating dump");
+        $output->writeln('Creating dump');
         $path = $this->databaseDumper->create();
 
-        $output->writeln("Upload dump");
+        $output->writeln('Compressing dump');
+        $output->writeln('');
+        $path = $this->databaseDumper->compress($path, $output);
+
+        $output->writeln('Upload dump');
         $this->databaseDumper->upload($path);
 
-        $output->writeln("Running GC");
+        $output->writeln('Running GC');
         $this->databaseDumper->garbageCollection();
     }
 }
