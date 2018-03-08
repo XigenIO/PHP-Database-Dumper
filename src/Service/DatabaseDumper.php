@@ -159,7 +159,7 @@ class DatabaseDumper
         $remotePath = date('Y/m/d_G-i');
 
         $fileStream = $local->readStream($path);
-        $remote->writeStream($remotePath . '.sql', $fileStream);
+        $remote->writeStream($remotePath . '.sql.gz', $fileStream);
 
         return true;
     }
@@ -191,17 +191,17 @@ class DatabaseDumper
 
     /**
      * Compress a database dump to
-     * @param  string $path
-     * @param  OutputInterface $output
-     * @return boolean
+     * @param  string $filename
+     * @param  OutputInterface|null $output Provide the OutputInterface to get output progress
+     * @return string Returns the full path to the compressed file
      */
-    public function compress($path, OutputInterface $output = null)
+    public function compress($filename, OutputInterface $output = null)
     {
         $local = $this->getLocalFilesystem();
-        $fileSize = $local->getSize($path);
-        $fileStream = $local->readStream($path);
-        $compressedName = $path . '.gz';
-        $gzHandle = gzopen($compressedName, 'w9');
+        $fileSize = $local->getSize($filename);
+        $fileStream = $local->readStream($filename);
+        $compressedPath = $this->getDumpDir() . $filename . '.gz';
+        $gzHandle = gzopen($compressedPath, 'w9');
 
         $progressBar = null;
         if (null !== $output) {
@@ -223,7 +223,7 @@ class DatabaseDumper
             $progressBar->finish();
         }
 
-        return $compressedName;
+        return $compressedPath;
     }
 
     /**
