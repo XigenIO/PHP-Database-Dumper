@@ -193,14 +193,15 @@ class DatabaseDumper
      * Compress a database dump to
      * @param  string $filename
      * @param  OutputInterface|null $output Provide the OutputInterface to get output progress
-     * @return string Returns the full path to the compressed file
+     * @return string Returns the filename of the compressed file
      */
     public function compress($filename, OutputInterface $output = null)
     {
         $local = $this->getLocalFilesystem();
         $fileSize = $local->getSize($filename);
         $fileStream = $local->readStream($filename);
-        $compressedPath = $this->getDumpDir() . $filename . '.gz';
+        $compressedFilename = $filename . '.gz';
+        $compressedPath = $this->getDumpDir() . $compressedFilename;
         $gzHandle = gzopen($compressedPath, 'w9');
 
         $progressBar = null;
@@ -223,7 +224,7 @@ class DatabaseDumper
             $progressBar->finish();
         }
 
-        return $compressedPath;
+        return $compressedFilename;
     }
 
     /**
