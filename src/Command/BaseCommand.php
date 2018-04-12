@@ -14,6 +14,9 @@ abstract class BaseCommand extends Command
      */
     protected $databaseDumper;
 
+    /**
+     * {@inheritdoc}
+     */
     public function __construct(DatabaseDumper $databaseDumper)
     {
         parent::__construct();

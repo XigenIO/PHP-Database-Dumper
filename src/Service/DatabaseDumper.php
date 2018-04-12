@@ -92,6 +92,8 @@ class DatabaseDumper
      */
     protected $dumpFolder = 'var/dumps/';
 
+    private $dbh;
+
     public function __construct(
         KernelInterface $kernel,
         Notifier $notifier,
@@ -101,8 +103,15 @@ class DatabaseDumper
         $this->kernel = $kernel;
         $this->notifier = $notifier;
         $this->setConfigs($mysqlConfig, $openstackConfig);
+
+        $this->configureMysqlConnection();
     }
 
+    /**
+     * Handle setting the configs from arrays
+     * @param array $mysqlConfig
+     * @param array $openstackConfig
+     */
     private function setConfigs(array $mysqlConfig, array $openstackConfig)
     {
         $this->mysqlHostname = $mysqlConfig['hostname'];
@@ -118,6 +127,57 @@ class DatabaseDumper
         $this->openstackContainer = $openstackConfig['container'];
     }
 
+    /**
+     * Configure the MySQL connection using PDO
+     */
+    private function configureMysqlConnection()
+    {
+        $this->dbh = new PDO($this->getDsn(), $this->mysqlUsername, $this->mysqlPassword);
+    }
+
+    /**
+     * Start the MySQL replication slave
+     * @return bool
+     */
+    private function resumeReplication()
+    {
+        $this->dbh->prepare('START SLAVE;')->execute();
+
+        // Allow 5 seconds for the replication to start
+        sleep(5);
+
+        return $this->checkSlaveStatus('Yes');
+    }
+
+    /**
+     * Stop the MySQL replication slave
+     * @return bool
+     */
+    private function pauseReplication()
+    {
+        $this->dbh->prepare('STOP SLAVE;')->execute();
+
+        return $this->checkSlaveStatus('No');
+    }
+
+    /**
+     * [checkSlaveStatus description]
+     * @param  string $status What should the current status match. Yes|No
+     * @return bool
+     */
+    public function checkSlaveStatus($status = 'Yes')
+    {
+        $stmt = $this->dbh->prepare('SHOW SLAVE STATUS;');
+        $stmt->execute();
+        $slaveStatus = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return ($slaveStatus['Slave_IO_Running'] === $status && $slaveStatus['Slave_SQL_Running'] === $status);
+    }
+
+    /**
+     * Return the location to store the database dumps temporarily
+     * @return string
+     */
     private function getDumpDir()
     {
         $fullPath = $this->kernel->getProjectDir() . '/' . $this->dumpFolder;
@@ -130,6 +190,10 @@ class DatabaseDumper
         return $fullPath;
     }
 
+    /**
+     * Return the local filesystem adapter
+     * @return \League\Flysystem\Filesystem
+     */
     private function getLocalFilesystem()
     {
         $adapter = new Local($this->getDumpDir());
@@ -138,6 +202,10 @@ class DatabaseDumper
         return $filesystem;
     }
 
+    /**
+     * Return the remote filesystem adapter
+     * @return \League\Flysystem\Filesystem
+     */
     private function getRemoteFilesystem()
     {
         $client = new OpenStack($this->openstackAuth, [
@@ -153,6 +221,11 @@ class DatabaseDumper
         return $filesystem;
     }
 
+    /**
+     * Upload a file from the local filesystem adapter to the remote
+     * @param  string $path Relative path of the file being uploaded
+     * @return bool
+     */
     public function upload($path)
     {
         $local = $this->getLocalFilesystem();
@@ -165,13 +238,27 @@ class DatabaseDumper
         return true;
     }
 
+    /**
+     * Return the DSN of the configured MySQL server
+     * @return string
+     */
     private function getDsn()
     {
         return "mysql:host={$this->mysqlHostname};dbname={$this->mysqlDatabase}";
     }
 
+    /**
+     * Create a fresh new database dump. This will pause and then resume replication
+     * @return string|bool Will return the filename or false if unsuccessful
+     */
     public function create()
     {
+        // Puase the replication
+        if (true !== $this->pauseReplication()) {
+            dump('unable to pause repliction');
+            return false;
+        };
+
         $filename = time() . '.sql';
         $path = $this->getDumpDir() . $filename;
 
@@ -187,12 +274,18 @@ class DatabaseDumper
             return false;
         }
 
+        // Enable the replication again
+        if (true !== $this->resumeReplication()) {
+            dump('unable to pause repliction');
+            return false;
+        };
+
         return $filename;
     }
 
     /**
-     * Compress a database dump to
-     * @param  string $filename
+     * Compress a database dump using gzip
+     * @param  string|bool $filename
      * @param  OutputInterface|null $output Provide the OutputInterface to get output progress
      * @return string Returns the filename of the compressed file
      */
@@ -207,7 +300,7 @@ class DatabaseDumper
 
         $progressBar = null;
         if (null !== $output) {
-            $progressBar = new ProgressBar($output, ($fileSize / self::BYTES_64));
+            $progressBar = new ProgressBar($output, $this->intoSteps($fileSize));
             $progressBar->setFormat('[%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% (%remaining:-6s%) %memory:6s%');
             $progressBar->start();
         }
@@ -226,6 +319,21 @@ class DatabaseDumper
         }
 
         return $compressedFilename;
+    }
+
+    /**
+     * Calculate the number of steps to display the console progress bar
+     * @param  int $fileSize
+     * @return int Number of steps
+     */
+    private function intoSteps(int $fileSize)
+    {
+        $steps = intval(round($fileSize / self::BYTES_64));
+        if (0 === $steps) {
+            return 1;
+        }
+
+        return $steps;
     }
 
     /**
