@@ -16,6 +16,7 @@ class GarbageCollectionCommand extends BaseCommand
     protected function configure()
     {
         $this->setName('app:garbage-collection')
+            ->setAliases(['app:gc'])
             ->setDescription('Run the garbage collection process to remove old files')
         ;
     }
