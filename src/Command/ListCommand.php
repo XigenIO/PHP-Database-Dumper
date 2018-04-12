@@ -95,8 +95,10 @@ class ListCommand extends BaseCommand
      * @param  integer $decimals
      * @return string
      */
-    protected function toReadableSize($bytes, $decimals = 2)
+    protected function toReadableSize($bytes, int $decimals = 2)
     {
+        // strlen requires a string
+        $bytes = (string) $bytes;
         $size = ['B','kB','MB','GB','TB','PB'];
         $factor = floor((strlen($bytes) - 1) / 3);
 
