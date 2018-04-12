@@ -20,6 +20,10 @@ use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
+/**
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.TooManyFields)
+ */
 class DatabaseDumper
 {
     /**
@@ -94,6 +98,12 @@ class DatabaseDumper
     protected $openstackContainer;
 
     /**
+     * Number of weeks to keep backups. Default: 2
+     * @var int
+     */
+    protected $keepDurationInWeeks;
+
+    /**
      * Location to store the database dumps relative to the project root
      * @var string
      */
@@ -106,11 +116,13 @@ class DatabaseDumper
         Notifier $notifier,
         LoggerInterface $logger,
         array $mysqlConfig,
-        array $openstackConfig
+        array $openstackConfig,
+        int $keepDurationInWeeks
     ) {
         $this->kernel = $kernel;
         $this->notifier = $notifier;
         $this->logger = $logger;
+        $this->keepDurationInWeeks = $keepDurationInWeeks;
 
         $this->setConfigs($mysqlConfig, $openstackConfig);
         $this->configureMysqlConnection();
@@ -395,19 +407,37 @@ class DatabaseDumper
     public function garbageCollection()
     {
         $this->logger->debug("Running garbage collection");
-        $filesystem = $this->getLocalFilesystem();
 
-        $removed = [];
-        foreach ($filesystem->listContents() as $object) {
-            $filesystem->delete($object['path']);
+        $localFilesystem = $this->getLocalFilesystem();
+        $remoteFilesystem = $this->getRemoteFilesystem();
+        $oldTimestamp = (new \DateTime("-{$this->keepDurationInWeeks} weeks"))->getTimestamp();
+        $removed = ['local' => [], 'remote' => []];
+
+        // Remove remote files older than the configured threshold
+        foreach ($remoteFilesystem->listContents('', true) as $file) {
+            if ($file['type'] === 'dir') {
+                continue;
+            }
+
+            // If file is older than the configured threshold
+            if ($file['timestamp'] < $oldTimestamp) {
+                dump($file);
+
+                $removed['remote'][] = $file['path'];
+            }
+        }
+
+        // Remove local temporary files
+        foreach ($localFilesystem->listContents() as $object) {
+            $localFilesystem->delete($object['path']);
             $filename = $object['basename'];
 
             $this->logger->debug("Removed local file {$filename}");
-            $removed[] = $filename;
+            $removed['local'][] = $filename;
         }
 
-        $removedTotal = count($removed);
-        $this->logger->debug("Finished garbage collection. Removed a total of {$removedTotal} files");
+        $removedTotal =  count($removed['local']) + count($removed['remote']);
+        $this->logger->debug("Finished garbage collection. Removed a total of {$removedTotal} files", $removed);
 
         return $removed;
     }

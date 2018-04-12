@@ -20,3 +20,6 @@ parameters:
         slack_enabled: '%env(DD_notification_slack_enabled)%'
         slack_url: '%env(DD_notification_slack_url)%'
         slack_channel: '%env(DD_notification_slack_channel)%'
+
+    # Optinal
+    dd_keep_duration_in_weeks: '%env(DD_keep_duration_in_weeks)%'
