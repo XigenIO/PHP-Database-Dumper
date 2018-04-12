@@ -157,12 +157,24 @@ class DatabaseDumper
     }
 
     /**
+     * Get the connection to the DB. Reconnect if required
+     * @return [type] [description]
+     */
+    public function getConnection() {
+        if ($this->dbh === null) {
+            $this->configureMysqlConnection();
+        }
+
+        return $this->dbh;
+    }
+
+    /**
      * Start the MySQL replication slave
      * @return bool
      */
     private function resumeReplication()
     {
-        $this->dbh->prepare('START SLAVE;')->execute();
+        $this->getConnection()->prepare('START SLAVE;')->execute();
 
         // Allow 5 seconds for the replication to start
         sleep(5);
@@ -176,7 +188,7 @@ class DatabaseDumper
      */
     private function pauseReplication()
     {
-        $this->dbh->prepare('STOP SLAVE;')->execute();
+        $this->getConnection()->prepare('STOP SLAVE;')->execute();
 
         return $this->checkSlaveStatus('No');
     }
@@ -188,7 +200,7 @@ class DatabaseDumper
      */
     public function checkSlaveStatus($status = 'Yes')
     {
-        $stmt = $this->dbh->prepare('SHOW SLAVE STATUS;');
+        $stmt = $this->getConnection()->prepare('SHOW SLAVE STATUS;');
         $stmt->execute();
         $slaveStatus = $stmt->fetch(PDO::FETCH_ASSOC);
 
