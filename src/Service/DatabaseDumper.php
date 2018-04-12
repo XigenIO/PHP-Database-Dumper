@@ -433,9 +433,11 @@ class DatabaseDumper
 
             // If file is older than the configured threshold
             if ($file['timestamp'] < $oldTimestamp) {
-                dump($file);
+                $remoteFilesystem->delete($file['path']);
+                $filename = $file['path'];
 
-                $removed['remote'][] = $file['path'];
+                $this->logger->debug("Removed remote file {$filename}");
+                $removed['remote'][] = $filename;
             }
         }
 
