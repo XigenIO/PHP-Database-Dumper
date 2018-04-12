@@ -5,6 +5,8 @@ namespace App\Command;
 
 use App\Service\DatabaseDumper;
 
+use Psr\Log\LoggerInterface;
+
 use Symfony\Component\Console\Command\Command;
 
 abstract class BaseCommand extends Command
@@ -15,11 +17,19 @@ abstract class BaseCommand extends Command
     protected $databaseDumper;
 
     /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
+
+    /**
      * {@inheritdoc}
      */
-    public function __construct(DatabaseDumper $databaseDumper)
-    {
+    public function __construct(
+        DatabaseDumper $databaseDumper,
+        LoggerInterface $logger
+    ) {
         parent::__construct();
         $this->databaseDumper = $databaseDumper;
+        $this->logger = $logger;
     }
 }

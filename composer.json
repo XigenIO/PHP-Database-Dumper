@@ -7,13 +7,14 @@
         "carbondate/carbon": "^1.23",
         "guzzlehttp/guzzle": "^6.3",
         "ifsnop/mysqldump-php": "^2.3",
-        "league/flysystem-rackspace": "^1.0",
         "league/flysystem": "^1.0",
+        "league/flysystem-rackspace": "^1.0",
         "symfony/console": "^4.0",
         "symfony/dotenv": "^4.0",
         "symfony/flex": "^1.0",
         "symfony/framework-bundle": "^4.0",
         "symfony/lts": "^4@dev",
+        "symfony/monolog-bundle": "^3.2",
         "symfony/yaml": "^4.0"
     },
     "require-dev": {

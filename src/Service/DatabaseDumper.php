@@ -14,6 +14,8 @@ use League\Flysystem\Adapter\Local;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Rackspace\RackspaceAdapter;
 
+use Psr\Log\LoggerInterface;
+
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -35,6 +37,11 @@ class DatabaseDumper
      * @var \App\Service\Notifier
      */
     protected $notifier;
+
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
 
     /**
      * @var string
@@ -97,13 +104,15 @@ class DatabaseDumper
     public function __construct(
         KernelInterface $kernel,
         Notifier $notifier,
+        LoggerInterface $logger,
         array $mysqlConfig,
         array $openstackConfig
     ) {
         $this->kernel = $kernel;
         $this->notifier = $notifier;
-        $this->setConfigs($mysqlConfig, $openstackConfig);
+        $this->logger = $logger;
 
+        $this->setConfigs($mysqlConfig, $openstackConfig);
         $this->configureMysqlConnection();
     }
 
@@ -228,12 +237,16 @@ class DatabaseDumper
      */
     public function upload($path)
     {
+        $this->logger->debug("Starting upload of file: {$path}");
+
         $local = $this->getLocalFilesystem();
         $remote = $this->getRemoteFilesystem();
         $remotePath = date('Y/m/d_G-i');
 
         $fileStream = $local->readStream($path);
         $remote->writeStream($remotePath . '.sql.gz', $fileStream);
+
+        $this->logger->debug("Upload complete");
 
         return true;
     }
@@ -253,9 +266,13 @@ class DatabaseDumper
      */
     public function create()
     {
+        $this->logger->debug("Creating new dump of the configured database");
+
         // Puase the replication
+        $this->logger->debug("Pausing the MySQL repliction");
         if (true !== $this->pauseReplication()) {
-            dump('unable to pause repliction');
+            $this->logger->critical("Unable to pause repliction and the backup has stopped");
+
             return false;
         };
 
@@ -263,6 +280,7 @@ class DatabaseDumper
         $path = $this->getDumpDir() . $filename;
 
         try {
+            $this->logger->debug("Starting new database dump");
             $dump = new IMysqldump\Mysqldump(
                 $this->getDsn(),
                 $this->mysqlUsername,
@@ -270,14 +288,16 @@ class DatabaseDumper
             );
             $dump->start($path);
         } catch (\Exception $e) {
-            dump($e->getMessage());
+            $this->logger->critical("Unable to create database dump", [$e]);
+
             return false;
         }
 
-        // Enable the replication again
+        $this->logger->debug("Database dump complete");
+
+        // Enable the replication again, continue with the upload even if it fails
         if (true !== $this->resumeReplication()) {
-            dump('unable to pause repliction');
-            return false;
+            $this->logger->alert("Unable to resume replication");
         };
 
         return $filename;
@@ -291,6 +311,8 @@ class DatabaseDumper
      */
     public function compress($filename, OutputInterface $output = null)
     {
+        $this->logger->debug("Starting compression of file: {$filename}");
+
         $local = $this->getLocalFilesystem();
         $fileSize = $local->getSize($filename);
         $fileStream = $local->readStream($filename);
@@ -317,6 +339,8 @@ class DatabaseDumper
         if ($progressBar) {
             $progressBar->finish();
         }
+
+        $this->logger->debug("Compression complete. File saved as: {$compressedFilename}");
 
         return $compressedFilename;
     }
@@ -370,13 +394,20 @@ class DatabaseDumper
      */
     public function garbageCollection()
     {
+        $this->logger->debug("Running garbage collection");
         $filesystem = $this->getLocalFilesystem();
 
         $removed = [];
         foreach ($filesystem->listContents() as $object) {
             $filesystem->delete($object['path']);
-            $removed[] = $object['basename'];
+            $filename = $object['basename'];
+
+            $this->logger->debug("Removed local file {$filename}");
+            $removed[] = $filename;
         }
+
+        $removedTotal = count($removed);
+        $this->logger->debug("Finished garbage collection. Removed a total of {$removedTotal} files");
 
         return $removed;
     }
