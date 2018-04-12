@@ -1,0 +1,11 @@
+version: '2'
+
+services:
+    app:
+        build:
+             context: ./
+             dockerfile: Dockerfile-app
+        restart: always
+        volumes:
+            - /tmp/database-dump-storage:/var/www/html/var/dumps/
+            - /var/log/database-dump-storage:/var/www/html/var/logs/

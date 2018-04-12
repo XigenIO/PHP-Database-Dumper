@@ -1,3 +1,4 @@
+.env.production
 
 ###> symfony/framework-bundle ###
 .env

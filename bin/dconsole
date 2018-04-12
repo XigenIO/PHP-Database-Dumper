@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker-compose -H development.xigen.co.uk:2756 exec app bin/console $1
+#docker-compose exec app bin/console $1

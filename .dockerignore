@@ -1,0 +1,17 @@
+.dockerignore
+.env
+.env.dist
+.git
+.git
+.gitignore
+.gitlab-ci.yml
+bin/dconsole
+bin/deploy
+docker-compose.yml
+Dockerfile-*
+docs
+phpstan.neon
+public/bundles/
+readme.md
+var/
+vendor/

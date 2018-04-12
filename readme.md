@@ -7,23 +7,32 @@ This project aims to dump a database on a replication slave by first stopping th
 For this application to create dump and manage repliction it needs to have the certain privileges assigned to the user. It is recomened to create a separate user just for this. Use the following bash commands to setup a new user with the correct privileges remembering to change the password from `changeme`.
 
 ```bash
-mysql -h 127.0.0.1 -e "DROP USER 'databasedumper'@'%';"
-mysql -h 127.0.0.1 -e "CREATE USER 'databasedumper'@'%' IDENTIFIED BY 'changeme';"
-mysql -h 127.0.0.1 -e "GRANT ALL ON *.* to 'databasedumper'@'%';"
-mysql -h 127.0.0.1 -e "FLUSH PRIVILEGES;"
+$ mysql -h 127.0.0.1 -e "DROP USER 'databasedumper'@'%';"
+$ mysql -h 127.0.0.1 -e "CREATE USER 'databasedumper'@'%' IDENTIFIED BY 'changeme';"
+$ mysql -h 127.0.0.1 -e "GRANT ALL ON *.* to 'databasedumper'@'%';"
+$ mysql -h 127.0.0.1 -e "FLUSH PRIVILEGES;"
 ```
 
 ## Development
 Start by cloning this repo and installing required dependencies via composer. This can take a few minutes as it will pull in all of the development packages.
 ```bash
-git clone git@git.xigen.co.uk:php/database-dump-storage.git database-dump-storage
-cd database-dump-storage
-composer install -vvv
+$ git clone git@git.xigen.co.uk:php/database-dump-storage.git database-dump-storage
+$ cd database-dump-storage
+$ composer install -vvv
 ```
 
 ### Running tests
 You can run the configured tests via the composer scripts functinallity. It will give feedback on the quality of code via  To do this run the following command:
 
 ```bash
-composer run-script tests
+$ composer run-script tests
 ```
+
+## Deployment
+Use the `deploy` script in `bin/` to upload changes to development.xigen.co.uk. A recent version of [docker-compose](docker-compose) is required. Before running this command dumplicate the `.env` file and call it `.env.production` then configure the application for production.
+
+```bash
+$ bin/deploy
+```
+
+[docker-compose]: https://github.com/docker/compose

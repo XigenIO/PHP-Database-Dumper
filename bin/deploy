@@ -1,0 +1,7 @@
+#!/bin/bash
+####
+# Use this script to deploy changes to development.xigen.co.uk
+####
+
+docker-compose -H development.xigen.co.uk:2756 up -d --build --force-recreate
+#docker-compose up -d --build --force-recreate
