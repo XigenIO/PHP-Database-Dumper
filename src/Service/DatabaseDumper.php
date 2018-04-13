@@ -109,7 +109,11 @@ class DatabaseDumper
      */
     protected $dumpFolder = 'var/dumps/';
 
-    private $dbh;
+    /**
+     * Database handler
+     * @var \PDO
+     */
+    private $dbh = null;
 
     public function __construct(
         KernelInterface $kernel,
@@ -149,20 +153,43 @@ class DatabaseDumper
     }
 
     /**
-     * Configure the MySQL connection using PDO
+     * Configure the MySQL connection using PDO and will try upto a max of 3 times before failing
+     * @SuppressWarnings(PHPMD.ExitExpression)
+     * @param int $retry How many attemts to connect is this?
+     * @return bool Was the connection successfull
      */
-    private function configureMysqlConnection()
+    private function configureMysqlConnection($retry = 0)
     {
-        $this->dbh = new PDO($this->getDsn(), $this->mysqlUsername, $this->mysqlPassword);
+        try {
+            $this->dbh = new PDO($this->getDsn(), $this->mysqlUsername, $this->mysqlPassword);
+        } catch (\Exception $e) {
+            if ($retry === 2) {
+                $this->logger->critical("Failed to connect to the database server", [$this]);
+
+                exit(99);
+            }
+            // Wait before trying again
+            sleep(5);
+            $retry++;
+
+            return $this->configureMysqlConnection($retry);
+        }
+
+        return true;
     }
 
     /**
      * Get the connection to the DB. Reconnect if required
-     * @return [type] [description]
+     * @return \PDO Return a PDO connection or false if the connection has been lost
      */
-    public function getConnection() {
-        if ($this->dbh === null) {
+    public function getConnection()
+    {
+        try {
+            $this->dbh->prepare('SHOW DATABASES;')->execute();
+        } catch (\Exception $e) {
             $this->configureMysqlConnection();
+
+            return $this->getConnection();
         }
 
         return $this->dbh;
@@ -320,8 +347,9 @@ class DatabaseDumper
         $this->logger->debug("Database dump complete");
 
         // Enable the replication again, continue with the upload even if it fails
+        $this->logger->debug("Resuming MySQL repliction");
         if (true !== $this->resumeReplication()) {
-            $this->logger->alert("Unable to resume replication");
+            $this->logger->alert("Unable to resume replication. Please fix this manually");
         };
 
         return $filename;
