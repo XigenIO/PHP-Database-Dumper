@@ -1,38 +1,38 @@
-# Database dump and storage
-This project aims to dump a database on a replication slave by first stopping the MySQL slave and then starting it again once a database dump has been completed. It will then upload the database dump to a configured openstack compatible storage and can also be configured to send notifications to Slack on any failures.
+# Database Dumper
+This project allows database dumps on replicated slave by first pausing replication before dumping data and then resumes replication after completion. It can then compress and upload to a configured openstack compatible storage and also configured to send notifications to Slack of any failures.
 
 ## Setup
+Setup for development
 
 ### MySQL
-For this application to create dump and manage repliction it needs to have the certain privileges assigned to the user. It is recomened to create a separate user just for this. Use the following bash commands to setup a new user with the correct privileges remembering to change the password from `changeme`.
+For this application to create dump and manage replication it needs to have the certain privileges assigned to the user. It is recommended to create a separate user just for this. Use the following bash commands to setup a new user with the correct privileges remembering to change the password from `changeme`.
 
 ```bash
-$ mysql -h 127.0.0.1 -e "DROP USER 'databasedumper'@'%';"
-$ mysql -h 127.0.0.1 -e "CREATE USER 'databasedumper'@'%' IDENTIFIED BY 'changeme';"
-$ mysql -h 127.0.0.1 -e "GRANT ALL ON *.* to 'databasedumper'@'%';"
-$ mysql -h 127.0.0.1 -e "FLUSH PRIVILEGES;"
+mysql -h 127.0.0.1 -e "DROP USER 'databasedumper'@'%';"
+mysql -h 127.0.0.1 -e "CREATE USER 'databasedumper'@'%' IDENTIFIED BY 'changeme';"
+mysql -h 127.0.0.1 -e "GRANT ALL ON *.* to 'databasedumper'@'%';"
+mysql -h 127.0.0.1 -e "FLUSH PRIVILEGES;"
 ```
 
 ## Development
 Start by cloning this repo and installing required dependencies via composer. This can take a few minutes as it will pull in all of the development packages.
 ```bash
-$ git clone git@git.xigen.co.uk:php/database-dump-storage.git database-dump-storage
-$ cd database-dump-storage
-$ composer install -vvv
+git clone git@github.com:XigenIO/PHP-Database-Dumper.git
+cd PHP-Database-Dumper
+
+# Build the docker image
+bin/docker-build
+# Install PHP composer dependencies
+composer install
+# Run the console comand within a Docker container
+bin/docker-console
 ```
 
 ### Running tests
-You can run the configured tests via the composer scripts functinallity. It will give feedback on the quality of code via  To do this run the following command:
+You can run the configured tests via the composer scripts functionality. It will give feedback on the quality of code via  To do this run the following command:
 
 ```bash
 $ composer run-script tests
-```
-
-## Deployment
-Use the `deploy` script in `bin/` to upload changes to development.xigen.co.uk. A recent version of [docker-compose](docker-compose) is required. Before running this command dumplicate the `.env` file and call it `.env.production` then configure the application for production.
-
-```bash
-$ bin/deploy
 ```
 
 [docker-compose]: https://github.com/docker/compose

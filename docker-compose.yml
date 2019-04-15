@@ -6,5 +6,3 @@ services:
              context: ./
              dockerfile: Dockerfile
         restart: 'no'
-        volumes:
-            - /var/log/database-dump-storage:/app/var/log/
