@@ -4,8 +4,7 @@ services:
     app:
         build:
              context: ./
-             dockerfile: Dockerfile-app
-        restart: always
+             dockerfile: Dockerfile
+        restart: 'no'
         volumes:
-            - /tmp/database-dump-storage:/var/www/html/var/dumps/
-            - /var/log/database-dump-storage:/var/www/html/var/log/
+            - /var/log/database-dump-storage:/app/var/log/
